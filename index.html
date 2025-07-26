@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "Choose the incorrectly spelled word:",
+          options: {
+            a: "Infatuation",
+            b: "Spaniel",
+            c: "Numerical",
+            d: "Familliar",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Familliar'। এর সঠিক বানান হলো 'Familiar'।</p><p>  • Infatuation: মোহ বা তীব্র অনুরাগ বোঝায়। এটি সঠিক বানান।</p><p>  • Spaniel: এক প্রকার কুকুর। এটি সঠিক বানান।</p><p>  • Numerical: সংখ্যাগত বা সাংখ্যিক বোঝায়। এটি সঠিক বানান।</p><p>  • Familiar: পরিচিত বা সুপরিচিত বোঝায়। এখানে 'll' এর পরিবর্তে একটি 'l' হবে।</p>",
+        },
+        {
+          id: 2,
+          question: "Choose the incorrectly spelled word.",
+          options: {
+            a: "Imminent",
+            b: "Iresisitible",
+            c: "Irresolute",
+            d: "Immense",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Iresisitible'। এর সঠিক বানান হলো 'Irresistible' যার অর্থ অপ্রতিরোধ্য বা অনিবার্য।</p><p>  • Imminent: আসন্ন বা অত্যাসন্ন বোঝায়। এটি সঠিক বানান।</p><p>  • Irresolute: অনিশ্চিত বা দ্বিধান্বিত বোঝায়। এটি সঠিক বানান।</p><p>  • Immense: বিশাল বা অপরিমেয় বোঝায়। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 3,
+          question: "Which one of the following is correct?",
+          options: {
+            a: "Adolescence",
+            b: "Addolescence",
+            c: "Adolescense",
+            d: "Adollescencee",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Adolescence'। এর অর্থ কৈশোর বা বয়ঃসন্ধিকাল।</p><p>  • Adolescence: সঠিক বানান, যার অর্থ কৈশোর।</p><p>  • Addolescence: 'd' এর ভুল ব্যবহার এবং 'cense' ভুল।</p><p>  • Adolescense: 'cense' এর ভুল ব্যবহার।</p><p>  • Adollescencee: 'l' এবং 'e' এর ভুল ব্যবহার।</p>",
+        },
+        {
+          id: 4,
+          question: "Which one is the right spelling?",
+          options: {
+            a: "Adolescence",
+            b: "Adolessence",
+            c: "Adolesence",
+            d: "Adolescance",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Adolescence'। এর অর্থ কৈশোর বা বয়ঃসন্ধিকাল।</p><p>  • Adolescence: সঠিক বানান, যার অর্থ কৈশোর।</p><p>  • Adolessence: 's' এর ভুল ব্যবহার।</p><p>  • Adolesence: 'c' এর পর 'e' এবং 's' এর ভুল ব্যবহার।</p><p>  • Adolescance: 'cance' এর ভুল ব্যবহার।</p>",
+        },
+        {
+          id: 5,
+          question: "Choose the correct spelling of the words given below:",
+          options: {
+            a: "Accomodation",
+            b: "Acommodation",
+            c: "Accommodation",
+            d: "Acommodasion",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Accommodation'। এর অর্থ বাসস্থান বা থাকার ব্যবস্থা।</p><p>  • Accomodation: এখানে একটি 'c' এবং একটি 'm' কম আছে। সঠিক হবে 'cc' এবং 'mm'।</p><p>  • Acommodation: এখানে 'A' এর পর একটি 'c' কম আছে এবং 'm' একটি কম আছে।</p><p>  • Accommodation: এটি সঠিক বানান।</p><p>  • Acommodasion: এখানে 'c' এবং 'm' এর ভুল ব্যবহার এবং শেষে 'sion' এর পরিবর্তে 'dation' হবে।</p>",
+        },
+        {
+          id: 6,
+          question: "Which is the correct spelling?",
+          options: {
+            a: "Humourous",
+            b: "Humourious",
+            c: "Humorious",
+            d: "Humorous",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Humorous'। এর অর্থ হাস্যরসাত্মক বা কৌতুকপূর্ণ।</p><p>  • Humourous: এই বানানটি ব্রিটিশ ইংরেজিতে 'Humour' শব্দের সাথে সম্পর্কিত, তবে 'Humorous' (হাস্যরসাত্মক) এর জন্য আমেরিকান ইংরেজিতে এটি ভুল।</p><p>  • Humourious: এই বানানটি ভুল।</p><p>  • Humorious: এই বানানটি ভুল।</p><p>  • Humorous: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 7,
+          question: "Which of the following words is correctly spelt?",
+          options: {
+            a: "Tyranical",
+            b: "Speculative",
+            c: "Tusslie",
+            d: "Fujitive",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Speculative'। এর অর্থ অনুমানমূলক বা জল্পনামূলক।</p><p>  • Tyranical: সঠিক বানান 'Tyrannical' (স্বৈরাচারী)।</p><p>  • Speculative: এটি সঠিক বানান।</p><p>  • Tusslie: সঠিক বানান 'Tussle' (ধস্তাধস্তি)।</p><p>  • Fujitive: সঠিক বানান 'Fugitive' (পলাতক)।</p>",
+        },
+        {
+          id: 8,
+          question: "Choose the correct spelling.",
+          options: {
+            a: "Approvel",
+            b: "Approval",
+            c: "Aproval",
+            d: "Aprovel",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Approval'। এর অর্থ অনুমোদন বা সম্মতি।</p><p>  • Approvel: 'vel' এর পরিবর্তে 'val' হবে।</p><p>  • Approval: এটি সঠিক বানান।</p><p>  • Aproval: প্রথম 'p' কম আছে।</p><p>  • Aprovel: প্রথম 'p' কম আছে এবং 'vel' এর পরিবর্তে 'val' হবে।</p>",
+        },
+        {
+          id: 9,
+          question: "Which one is correctly spelt?",
+          options: {
+            a: "Annihilete",
+            b: "Annihilate",
+            c: "Annihilat",
+            d: "Anihilete",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Annihilate'। এর অর্থ সম্পূর্ণভাবে ধ্বংস করা বা নিশ্চিহ্ন করা।</p><p>  • Annihilete: 'e' এর পরিবর্তে 'a' হবে এবং শেষ 'e' অতিরিক্ত।</p><p>  • Annihilate: এটি সঠিক বানান।</p><p>  • Annihilat: শেষে 'e' কম আছে।</p><p>  • Anihilete: প্রথম 'n' কম আছে এবং 'e' এর পরিবর্তে 'a' হবে।</p>",
+        },
+        {
+          id: 10,
+          question: "Choose the correct spelling.",
+          options: {
+            a: "Diarrhoea",
+            b: "Diarheah",
+            c: "Diarea",
+            d: "Diareah",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Diarrhoea'। এর অর্থ উদরাময় বা ডায়রিয়া।</p><p>  • Diarrhoea: এটি সঠিক বানান (ব্রিটিশ ইংরেজি)। আমেরিকান ইংরেজিতে 'Diarrhea' ও সঠিক।</p><p>  • Diarheah: ভুল বানান।</p><p>  • Diarea: ভুল বানান।</p><p>  • Diareah: ভুল বানান।</p>",
+        },
+        {
+          id: 11,
+          question: "Choose the correct spelling:",
+          options: {
+            a: "Indigeneous",
+            b: "Indeginous",
+            c: "Indigenous",
+            d: "Indigenius",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Indigenous'। এর অর্থ স্থানীয় বা আদিবাসী।</p><p>  • Indigeneous: 'e' এর পরিবর্তে 'o' হবে।</p><p>  • Indeginous: 'e' এর পরিবর্তে 'i' হবে।</p><p>  • Indigenous: এটি সঠিক বানান।</p><p>  • Indigenius: 'i' এর পরিবর্তে 'o' হবে।</p>",
+        },
+        {
+          id: 12,
+          question: "Which one is the incorrect spelling?",
+          options: {
+            a: "deportation",
+            b: "depriciation",
+            c: "denunciation",
+            d: "denomination",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'depriciation'। এর সঠিক বানান হলো 'depreciation' যার অর্থ অবচয় বা মূল্যহ্রাস।</p><p>  • deportation: নির্বাসন বা দেশান্তর। এটি সঠিক বানান।</p><p>  • depriciation: সঠিক বানান 'depreciation'। এখানে 'ci' এর পরিবর্তে 'ci' হবে।</p><p>  • denunciation: নিন্দা বা ভর্ৎসনা। এটি সঠিক বানান।</p><p>  • denomination: শ্রেণী বা সম্প্রদায়। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 13,
+          question: "Find wrongly spelt word-",
+          options: {
+            a: "Differed",
+            b: "Suffered",
+            c: "Offered",
+            d: "Reffered",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Reffered'। এর সঠিক বানান হলো 'Referred' যার অর্থ উল্লেখ করা বা নির্দেশ করা।</p><p>  • Differed: ভিন্ন হওয়া বা অসম্মত হওয়া। এটি সঠিক বানান।</p><p>  • Suffered: কষ্ট পাওয়া বা ভোগা। এটি সঠিক বানান।</p><p>  • Offered: প্রস্তাব করা বা পেশ করা। এটি সঠিক বানান।</p><p>  • Reffered: সঠিক বানান 'Referred'। এখানে একটি 'f' অতিরিক্ত আছে।</p>",
+        },
+        {
+          id: 14,
+          question: "Choose the correct spelling-",
+          options: {
+            a: "renaisance",
+            b: "quotidian",
+            c: "etiqueette",
+            d: "repetation",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'quotidian'। এর অর্থ দৈনিক বা দৈনন্দিন।</p><p>  • renaisance: সঠিক বানান 'renaissance' (রেনেসাঁ)।</p><p>  • quotidian: এটি সঠিক বানান।</p><p>  • etiqueette: সঠিক বানান 'etiquette' (শিষ্টাচার)।</p><p>  • repetation: সঠিক বানান 'repetition' (পুনরাবৃত্তি)।</p>",
+        },
+        {
+          id: 15,
+          question: "কোন বানানটি শুদ্ধ?",
+          options: {
+            a: "nonetheless",
+            b: "nontheless",
+            c: "nonthaless",
+            d: "nonetheles",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'nonetheless'। এর অর্থ তবুও বা তা সত্ত্বেও।</p><p>  • nonetheless: এটি সঠিক বানান।</p><p>  • nontheless: এখানে 'n' এর পর 'o' কম আছে।</p><p>  • nonthaless: 'tha' এর পরিবর্তে 'the' হবে।</p><p>  • nonetheles: শেষে 's' কম আছে।</p>",
+        },
+        {
+          id: 16,
+          question: "Select the correct spelling.",
+          options: {
+            a: "scizophrania",
+            b: "schizophrenia",
+            c: "seizophrenia",
+            d: "schizophrenia",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'schizophrenia'। এর অর্থ এক প্রকার মানসিক রোগ, সিজোফ্রেনিয়া।</p><p>  • scizophrania: 'ci' এর পরিবর্তে 'ch' হবে এবং 'phra' এর পরিবর্তে 'phre' হবে।</p><p>  • schizophrenia: এটি সঠিক বানান।</p><p>  • seizophrenia: 'ei' এর পরিবর্তে 'chi' হবে।</p><p>  • schizophrenia: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 17,
+          question: "Find the incorrectly spell word.",
+          options: {
+            a: "etiquette",
+            b: "nightmare",
+            c: "questionnaire",
+            d: "menifestation",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'menifestation'। এর সঠিক বানান হলো 'manifestation' যার অর্থ প্রকাশ বা অভিব্যক্তি।</p><p>  • etiquette: শিষ্টাচার। এটি সঠিক বানান।</p><p>  • nightmare: দুঃস্বপ্ন। এটি সঠিক বানান।</p><p>  • questionnaire: প্রশ্নমালা। এটি সঠিক বানান।</p><p>  • menifestation: সঠিক বানান 'manifestation'। এখানে 'e' এর পরিবর্তে 'a' হবে।</p>",
+        },
+        {
+          id: 18,
+          question: "Choose the correct spelling -",
+          options: {
+            a: "Amateur",
+            b: "Aqurium",
+            c: "Assurence",
+            d: "Alignement",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Amateur'। এর অর্থ অপেশাদার বা শৌখিন।</p><p>  • Amateur: এটি সঠিক বানান।</p><p>  • Aqurium: সঠিক বানান 'Aquarium' (অ্যাকোয়ারিয়াম)।</p><p>  • Assurence: সঠিক বানান 'Assurance' (আশ্বস্তকরণ)।</p><p>  • Alignement: সঠিক বানান 'Alignment' (সারিবদ্ধকরণ)।</p>",
+        },
+        {
+          id: 19,
+          question: "Choose the correct spelling?",
+          options: {
+            a: "reminisce",
+            b: "reminis",
+            c: "riminisce",
+            d: "reminice",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'reminisce'। এর অর্থ স্মৃতিচারণ করা বা স্মরণ করা।</p><p>  • reminisce: এটি সঠিক বানান।</p><p>  • reminis: শেষে 'ce' কম আছে।</p><p>  • riminisce: প্রথম 'i' এর পরিবর্তে 'e' হবে।</p><p>  • reminice: 's' কম আছে।</p>",
+        },
+        {
+          id: 20,
+          question: "Which one is correct spelling?",
+          options: {
+            a: "imeginary",
+            b: "imaginery",
+            c: "imaginary",
+            d: "emaginary",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'imaginary'। এর অর্থ কাল্পনিক বা অলীক।</p><p>  • imeginary: 'e' এর পরিবর্তে 'a' হবে।</p><p>  • imaginery: 'e' এর পরিবর্তে 'a' হবে।</p><p>  • imaginary: এটি সঠিক বানান।</p><p>  • emaginary: প্রথম 'e' এর পরিবর্তে 'i' হবে।</p>",
+        },
+        {
+          id: 21,
+          question: "Which word is misspelled?",
+          options: {
+            a: "Nausea",
+            b: "Spacesuite",
+            c: "Mandetory",
+            d: "Diseminate",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Spacesuite'। এর সঠিক বানান হলো 'Spacesuit' যার অর্থ মহাকাশচারীদের পোশাক।</p><p>  • Nausea: বমি বমি ভাব। এটি সঠিক বানান।</p><p>  • Spacesuite: সঠিক বানান 'Spacesuit'। এখানে 'e' অতিরিক্ত আছে।</p><p>  • Mandetory: সঠিক বানান 'Mandatory' (বাধ্যতামূলক)।</p><p>  • Diseminate: সঠিক বানান 'Disseminate' (ছড়িয়ে দেওয়া)।</p>",
+        },
+        {
+          id: 22,
+          question: "Which word is incorrectly spelt?",
+          options: {
+            a: "headache",
+            b: "miser",
+            c: "recommend",
+            d: "resteurant",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'resteurant'। এর সঠিক বানান হলো 'restaurant' যার অর্থ রেস্তোরাঁ।</p><p>  • headache: মাথা ব্যথা। এটি সঠিক বানান।</p><p>  • miser: কৃপণ ব্যক্তি। এটি সঠিক বানান।</p><p>  • recommend: সুপারিশ করা। এটি সঠিক বানান।</p><p>  • resteurant: সঠিক বানান 'restaurant'। এখানে 'eu' এর পরিবর্তে 'au' হবে।</p>",
+        },
+        {
+          id: 23,
+          question: "Identify the correctly spelled word.",
+          options: {
+            a: "Courtius",
+            b: "Suspisious",
+            c: "Persuada",
+            d: "Descendant",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Descendant'। এর অর্থ বংশধর।</p><p>  • Courtius: সঠিক বানান 'Courteous' (বিনয়ী)।</p><p>  • Suspisious: সঠিক বানান 'Suspicious' (সন্দেহজনক)।</p><p>  • Persuada: সঠিক বানান 'Persuade' (প্ররোচিত করা)।</p><p>  • Descendant: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 24,
+          question: "You will have to choose _ the two evils.",
+          options: {
+            a: "the lesser of",
+            b: "the less of",
+            c: "the less than",
+            d: "lesser than",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'the lesser of'। যখন দুটি বস্তুর মধ্যে তুলনা করা হয় এবং সেগুলোর মধ্যে যেটি পরিমাণে কম বা গুরুত্বে কম বোঝানো হয়, তখন 'lesser' ব্যবহার করা হয়। এটি তুলনামূলক ডিগ্রি হিসেবে ব্যবহৃত হয় এবং এর আগে 'the' বসে।</p><p>  • the lesser of: দুটি অপশনের মধ্যে যেটি কম ক্ষতিকর বা কম গুরুত্বপূর্ণ, সেটি বোঝাতে ব্যবহৃত হয়। এটি সঠিক।</p><p>  • the less of: 'less' পরিমাণগত তুলনা বোঝায় এবং সাধারণত অগণনযোগ্য বিশেষ্যের সাথে ব্যবহৃত হয়। এখানে 'evils' গণনযোগ্য, তাই 'lesser' বেশি উপযুক্ত।</p><p>  • the less than: 'less than' সাধারণত সরাসরি তুলনার ক্ষেত্রে ব্যবহৃত হয়, যেমন 'less than two apples'। বাক্যের গঠনের সাথে এটি মানানসই নয়।</p><p>  • lesser than: 'lesser' নিজেই একটি তুলনামূলক শব্দ, তাই 'than' এর সাথে সরাসরি ব্যবহৃত হয় না যখন 'of the two' থাকে।</p>",
+        },
+        {
+          id: 25,
+          question: "Ball-point pens require _ than fountain pens do.",
+          options: {
+            a: "the thicker the ink",
+            b: "an ink and thicker",
+            c: "the ink is thicker",
+            d: "a thicker ink",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'a thicker ink'। এই বাক্যটি 'ball-point pens' এবং 'fountain pens' এর মধ্যে কালির পুরুত্বের তুলনা করছে। 'thicker' হলো 'thick' এর তুলনামূলক ডিগ্রি এবং এর আগে 'a' আর্টিকেল ব্যবহার করে একটি নির্দিষ্ট ধরণের কালি বোঝানো হচ্ছে।</p><p>  • the thicker the ink: এই গঠনটি 'the + comparative, the + comparative' (যেমন 'the more, the merrier') ধরনের বাক্যে ব্যবহৃত হয়, যা এখানে প্রযোজ্য নয়।</p><p>  • an ink and thicker: এটি ব্যাকরণগতভাবে ভুল গঠন।</p><p>  • the ink is thicker: এটি একটি সম্পূর্ণ বাক্য, কিন্তু প্রদত্ত শূন্যস্থানে খাপ খায় না। এখানে একটি বিশেষ্য পদ প্রয়োজন।</p><p>  • a thicker ink: এটি সঠিক গঠন। 'thicker' বিশেষণটি 'ink' বিশেষ্যকে যোগ্যতা দান করছে এবং 'a' আর্টিকেলটি সাধারণ অর্থে ব্যবহৃত হয়েছে।</p>",
+        },
+        {
+          id: 26,
+          question: "My research report is much bigger _ my friend.",
+          options: {
+            a: "than",
+            b: "then",
+            c: "than that",
+            d: "than that of",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'than that of'। বাক্যটি আমার গবেষণা প্রতিবেদনের সাথে আমার বন্ধুর গবেষণা প্রতিবেদনের তুলনা করছে। সরাসরি 'my friend' এর সাথে তুলনা করলে বাক্যটি ভুল হবে, কারণ একটি বস্তু (research report) এর সাথে একজন ব্যক্তির (my friend) তুলনা করা হচ্ছে, যা অযৌক্তিক। তাই, 'that of' ব্যবহার করে 'my friend's research report' বোঝানো হয়, যার ফলে একটি সঠিক এবং যৌক্তিক তুলনা করা সম্ভব হয়।</p><p>  • than: শুধুমাত্র 'than' ব্যবহার করলে ভুল তুলনা হয় (প্রতিবেদন বনাম বন্ধু)।</p><p>  • then: 'then' একটি সময়ের ক্রিয়াবিশেষণ, যা তুলনার জন্য ব্যবহৃত হয় না।</p><p>  • than that: 'that' ব্যবহার করা যেতে পারে যদি 'my friend' এর পরে 'research report' স্পষ্ট করে উল্লেখ করার প্রয়োজন না থাকে, তবে 'than that of' অধিকতর সুনির্দিষ্ট।</p><p>  • than that of: এটি সঠিক। এটি আমার গবেষণা প্রতিবেদনের সাথে আমার বন্ধুর গবেষণা প্রতিবেদনের তুলনা করে।</p>",
+        },
+        {
+          id: 27,
+          question: "Of the four dresses, I like the red one-",
+          options: {
+            a: "better",
+            b: "the better",
+            c: "best",
+            d: "the best",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'the best'। যখন তিন বা ততোধিক বস্তুর মধ্যে তুলনা করে যেটি সবচেয়ে ভালো সেটি বোঝানো হয়, তখন 'superlative degree' ব্যবহৃত হয়। 'four dresses' থাকায় 'best' (superlative degree of good) ব্যবহার করতে হবে এবং superlative degree এর আগে সাধারণত 'the' বসে।</p><p>  • better: এটি 'comparative degree' (দুটি বস্তুর মধ্যে তুলনা)।</p><p>  • the better: এটিও দুটি বস্তুর মধ্যে তুলনা বোঝাতে ব্যবহৃত হয়, তবে সাধারণত 'of the two' এর সাথে।</p><p>  • best: এটি 'superlative degree', তবে এর আগে 'the' প্রয়োজন।</p><p>  • the best: এটি সঠিক। 'four dresses' এর মধ্যে শ্রেষ্ঠত্ব বোঝাতে 'the best' ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 28,
+          question: "This chair is _ the other.",
+          options: {
+            a: "comfortable than",
+            b: "more comfortable than",
+            c: "more comfortable then",
+            d: "much comfortable than",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'more comfortable than'। বাক্যটি দুটি চেয়ারের মধ্যে আরামের তুলনা করছে। 'comfortable' একটি দীর্ঘ বিশেষণ, তাই এর তুলনামূলক ডিগ্রি বোঝাতে 'more' ব্যবহার করা হয় এবং তুলনা বোঝাতে 'than' ব্যবহৃত হয়।</p><p>  • comfortable than: 'comfortable' এর তুলনামূলক রূপ প্রয়োজন, শুধু 'comfortable' সঠিক নয়।</p><p>  • more comfortable than: এটি সঠিক। 'more' দ্বারা তুলনামূলক ডিগ্রি এবং 'than' দ্বারা তুলনা বোঝানো হয়েছে।</p><p>  • more comfortable then: 'then' সময়ের ক্রিয়াবিশেষণ, তুলনার জন্য 'than' ব্যবহৃত হয়।</p><p>  • much comfortable than: 'much' এর পরিবর্তে 'more' ব্যবহৃত হয় তুলনামূলক ডিগ্রির ক্ষেত্রে। যদিও 'much more comfortable' বলা যায়, 'much comfortable' সঠিক নয়।</p>",
+        },
+        {
+          id: 29,
+          question: "The greater the demand, _ the price.",
+          options: {
+            a: "high",
+            b: "higher",
+            c: "the higher",
+            d: "highest",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'the higher'। এটি 'the + comparative, the + comparative' কাঠামোটির একটি উদাহরণ, যা দুটি সমান্তরাল পরিবর্তন বা অনুপাত বোঝাতে ব্যবহৃত হয়। এর অর্থ হলো, চাহিদা যত বেশি হবে, দামও তত বেশি হবে।</p><p>  • high: এটি সাধারণ রূপ, তুলনামূলক ডিগ্রি নয়।</p><p>  • higher: এটি তুলনামূলক ডিগ্রি, তবে এই কাঠামোতে এর আগে 'the' প্রয়োজন।</p><p>  • the higher: এটি সঠিক। 'The greater the demand, the higher the price' এই কাঠামোটি নির্ভুল।</p><p>  • highest: এটি superlative degree, যা এখানে প্রযোজ্য নয়।</p>",
+        },
+        {
+          id: 30,
+          question: "I was simply impressed to see, _ palace.",
+          options: {
+            a: "a ten-years-old",
+            b: "ten-year-old",
+            c: "ten-years old",
+            d: "ten-year-old",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'ten-year-old'। যখন একটি সংখ্যা এবং একটি সময়সীমা একটি হাইফেন দ্বারা যুক্ত হয়ে একটি যৌগিক বিশেষণ হিসাবে একটি বিশেষ্যকে (যেমন 'palace') পরিবর্তন করে, তখন সময়সীমাটি (এখানে 'year') বহুবচন হয় না, অর্থাৎ 'years' না হয়ে 'year' হয়।</p><p>  • a ten-years-old: এখানে 'years' ভুল, কারণ এটি একটি যৌগিক বিশেষণ।</p><p>  • ten-year-old: এটি সঠিক গঠন। 'ten-year-old' একটি যৌগিক বিশেষণ।</p><p>  • ten-years old: এখানে 'years' ভুল এবং হাইফেন নেই।</p><p>  • ten-year-old: এটি সঠিক গঠন।</p>",
+        },
+        {
+          id: 31,
+          question: "These are _ results I have ever had in an exam!",
+          options: {
+            a: "the worst",
+            b: "worst",
+            c: "worse",
+            d: "most worse",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'the worst'। বাক্যটি বোঝায় যে এই ফলাফলগুলি এখন পর্যন্ত প্রাপ্ত ফলাফলগুলির মধ্যে সবচেয়ে খারাপ। এটি 'bad' এর 'superlative degree' ব্যবহার করছে, এবং superlative degree এর আগে সাধারণত 'the' বসে।</p><p>  • the worst: এটি সঠিক। 'worst' হল 'bad' এর superlative form, এবং 'the' এর সাথে এটি সবচেয়ে খারাপ ফলাফল বোঝায়।</p><p>  • worst: 'the' ছাড়া সাধারণত superlative form ব্যবহৃত হয় না, বিশেষ করে যখন একটি নির্দিষ্ট সেট থেকে নির্বাচন করা হয়।</p><p>  • worse: এটি 'bad' এর 'comparative degree' (দুটি জিনিসের মধ্যে তুলনা)।</p><p>  • most worse: 'worse' নিজেই একটি তুলনামূলক ডিগ্রি, তাই 'most' যোগ করার প্রয়োজন নেই। এটি ভুল গঠন।</p>",
+        },
+        {
+          id: 32,
+          question: "Which word is correctly spelt?",
+          options: {
+            a: "compulsory",
+            b: "univarsal",
+            c: "schizophrenia",
+            d: "headach",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'schizophrenia'। এর অর্থ সিজোফ্রেনিয়া।</p><p>  • compulsory: সঠিক বানান 'compulsory' (বাধ্যতামূলক)।</p><p>  • univarsal: সঠিক বানান 'universal' (সর্বজনীন)।</p><p>  • schizophrenia: এটি সঠিক বানান।</p><p>  • headach: সঠিক বানান 'headache' (মাথা ব্যথা)।</p>",
+        },
+        {
+          id: 33,
+          question: "Choose the correctly spelt word:",
+          options: {
+            a: "Besech",
+            b: "Beseech",
+            c: "Beseach",
+            d: "Beseche",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Beseech'। এর অর্থ অনুনয় করা বা মিনতি করা।</p><p>  • Besech: 'e' কম আছে।</p><p>  • Beseech: এটি সঠিক বানান।</p><p>  • Beseach: 'ea' এর পরিবর্তে 'ee' হবে।</p><p>  • Beseche: শেষে 'e' অতিরিক্ত।</p>",
+        },
+        {
+          id: 34,
+          question: "The correct spelling is-",
+          options: {
+            a: "megalomenia",
+            b: "onomatopoeia",
+            c: "invision",
+            d: "omlete",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'onomatopoeia'। এর অর্থ ধ্বন্যাত্মক শব্দ, যেমন কুকুরের ঘেউ ঘেউ শব্দ।</p><p>  • megalomenia: সঠিক বানান 'megalomania' (অহংকার)।</p><p>  • onomatopoeia: এটি সঠিক বানান।</p><p>  • invision: সঠিক বানান 'envision' (কল্পনা করা)।</p><p>  • omlete: সঠিক বানান 'omelette' (অমলেট)।</p>",
+        },
+        {
+          id: 35,
+          question: "Which one is correctly spelt?",
+          options: {
+            a: "Incorrigible",
+            b: "Repitition",
+            c: "Attension",
+            d: "Dystopea",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Incorrigible'। এর অর্থ অসংশোধনীয় বা দুর্মর।</p><p>  • Incorrigible: এটি সঠিক বানান।</p><p>  • Repitition: সঠিক বানান 'Repetition' (পুনরাবৃত্তি)।</p><p>  • Attension: সঠিক বানান 'Attention' (মনোযোগ)।</p><p>  • Dystopea: সঠিক বানান 'Dystopia' (দুঃখময় স্থান)।</p>",
+        },
+        {
+          id: 36,
+          question: "Which one is the right spelling?",
+          options: {
+            a: "Rendezvous",
+            b: "Rendesvouz",
+            c: "Rendavoo",
+            d: "Rendezvoo",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Rendezvous'। এর অর্থ গোপন সাক্ষাৎ বা নির্ধারিত মিলনস্থল।</p><p>  • Rendezvous: এটি সঠিক বানান।</p><p>  • Rendesvouz: ভুল বানান।</p><p>  • Rendavoo: ভুল বানান।</p><p>  • Rendezvoo: ভুল বানান।</p>",
+        },
+        {
+          id: 37,
+          question: "Which of the following spelling is correct?",
+          options: {
+            a: "Assertain",
+            b: "Asertain",
+            c: "Ascertain",
+            d: "Asartain",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Ascertain'। এর অর্থ নিশ্চিত করা বা নির্ণয় করা।</p><p>  • Assertain: 's' অতিরিক্ত।</p><p>  • Asertain: 'c' কম আছে।</p><p>  • Ascertain: এটি সঠিক বানান।</p><p>  • Asartain: 'a' এর পরিবর্তে 'e' হবে।</p>",
+        },
+        {
+          id: 38,
+          question: "কর্নেল শব্দের সঠিক বানান-",
+          options: {
+            a: "Corneel",
+            b: "Cornale",
+            c: "Colonel",
+            d: "Colonale",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Colonel'। এর অর্থ সামরিক বাহিনীর একজন পদস্থ কর্মকর্তা।</p><p>  • Corneel: ভুল বানান।</p><p>  • Cornale: ভুল বানান।</p><p>  • Colonel: এটি সঠিক বানান। এটি ইংরেজি বানানের একটি বিশেষ উদাহরণ যেখানে উচ্চারণ এবং বানানের মধ্যে কিছুটা পার্থক্য রয়েছে।</p><p>  • Colonale: ভুল বানান।</p>",
+        },
+        {
+          id: 39,
+          question: "Which one is correct?",
+          options: {
+            a: "Renassance",
+            b: "Renaissance",
+            c: "Renissance",
+            d: "Renessance",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Renaissance'। এর অর্থ নবজাগরণ বা পুনর্জন্ম।</p><p>  • Renassance: 's' অতিরিক্ত।</p><p>  • Renaissance: এটি সঠিক বানান।</p><p>  • Renissance: 'i' এর পরিবর্তে 'a' হবে।</p><p>  • Renessance: 'e' এর পরিবর্তে 'a' হবে।</p>",
+        },
+        {
+          id: 40,
+          question: "Choose the word correctly spelt:",
+          options: {
+            a: "Continum",
+            b: "Cozmopolitan",
+            c: "Consolitade",
+            d: "Correspondence",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Correspondence'। এর অর্থ চিঠিপত্র বা যোগাযোগ।</p><p>  • Continum: সঠিক বানান 'Continuum' (ধারাবাহিকতা)।</p><p>  • Cozmopolitan: সঠিক বানান 'Cosmopolitan' (বিশ্বজনীন)।</p><p>  • Consolitade: সঠিক বানান 'Consolidate' (একত্রিত করা)।</p><p>  • Correspondence: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 41,
+          question: "Which one is correctly spelt?",
+          options: {
+            a: "Fience",
+            b: "Parallal",
+            c: "Priveledge",
+            d: "Archipelago",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Archipelago'। এর অর্থ দ্বীপপুঞ্জ।</p><p>  • Fience: সঠিক বানান 'Fiancé' (বাগদত্তা পুরুষ) বা 'Fiancée' (বাগদত্তা নারী)।</p><p>  • Parallal: সঠিক বানান 'Parallel' (সমান্তরাল)।</p><p>  • Priveledge: সঠিক বানান 'Privilege' (সুবিধা)।</p><p>  • Archipelago: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 42,
+          question: "Choose the correct spelling.",
+          options: {
+            a: "Inacessibility",
+            b: "Inaccissibility",
+            c: "Inaccessbilit",
+            d: "Inaccessibility",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Inaccessibility'। এর অর্থ দুর্গম্যতা বা প্রবেশাধিকারের অভাব।</p><p>  • Inacessibility: 'c' কম আছে এবং 's' অতিরিক্ত।</p><p>  • Inaccissibility: 'i' এর পরিবর্তে 'e' হবে।</p><p>  • Inaccessbilit: 'bilit' এর পরিবর্তে 'bility' হবে।</p><p>  • Inaccessibility: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 43,
+          question: "Select the correct spelling-",
+          options: {
+            a: "Reminiscience",
+            b: "Reminiscense",
+            c: "Reminiscence",
+            d: "Reminsence",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Reminiscence'। এর অর্থ স্মৃতিচারণ বা অতীত স্মৃতি।</p><p>  • Reminiscience: 'ci' এর পরিবর্তে 'sc' হবে।</p><p>  • Reminiscense: 'se' এর পরিবর্তে 'ce' হবে।</p><p>  • Reminiscence: এটি সঠিক বানান।</p><p>  • Reminsence: 'i' কম আছে এবং 'se' এর পরিবর্তে 'ce' হবে।</p>",
+        },
+        {
+          id: 44,
+          question: "QUESTIONAIRE",
+          options: {
+            a: "Questionnaire",
+            b: "Questionaire",
+            c: "Questionnairre",
+            d: "Questionnair",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Questionnaire'। এর অর্থ প্রশ্নমালা বা প্রশ্নাবলী।</p><p>  • Questionnaire: এটি সঠিক বানান।</p><p>  • Questionaire: 'n' কম আছে।</p><p>  • Questionnairre: 're' অতিরিক্ত।</p><p>  • Questionnair: শেষে 'e' কম আছে।</p>",
+        },
+        {
+          id: 45,
+          question: "PARSEVERANCE",
+          options: {
+            a: "Perseverence",
+            b: "Perseverance",
+            c: "Persivareace",
+            d: "Persaverance",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Perseverance'। এর অর্থ অধ্যবসায় বা দৃঢ়তা।</p><p>  • Perseverence: 'e' এর পরিবর্তে 'a' হবে।</p><p>  • Perseverance: এটি সঠিক বানান।</p><p>  • Persivareace: ভুল বানান।</p><p>  • Persaverance: 'a' এর পরিবর্তে 'e' হবে।</p>",
+        },
+        {
+          id: 46,
+          question:
+            "Your courage is as great as any other person in defending your country.",
+          options: {
+            a: "as great as any other person",
+            b: "as great as any other persons",
+            c: "great like other person",
+            d: "as great as that of any other person",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'as great as that of any other person'। এই বাক্যে আপনার সাহসের সাথে অন্য কোনো ব্যক্তির সাহসের তুলনা করা হচ্ছে। সরাসরি 'any other person' এর সাথে তুলনা করলে বাক্যটি ভুল হবে, কারণ একটি বিমূর্ত গুণ (courage) এর সাথে একজন ব্যক্তির তুলনা করা হচ্ছে, যা অযৌক্তিক। তাই, 'that of' ব্যবহার করে 'courage of any other person' বোঝানো হয়, যার ফলে একটি সঠিক এবং যৌক্তিক তুলনা করা সম্ভব হয়।</p><p>  • as great as any other person: এটি ভুল কারণ এটি সাহসের সাথে একজন ব্যক্তির তুলনা করে।</p><p>  • as great as any other persons: এটিও ভুল কারণ এটি সাহসের সাথে একাধিক ব্যক্তির তুলনা করে।</p><p>  • great like other person: 'like' তুলনার ক্ষেত্রে ব্যবহৃত হলেও, 'as great as' এর মতো সঠিক গঠন নয়।</p><p>  • as great as that of any other person: এটি সঠিক। 'that of' দ্বারা 'courage of' বোঝানো হয়েছে, যার ফলে দুটি গুণের মধ্যে সঠিক তুলনা করা সম্ভব হয়েছে।</p>",
+        },
+        {
+          id: 47,
+          question: "DESSICATE",
+          options: {
+            a: "Dessicate",
+            b: "Desiccate",
+            c: "Desicate",
+            d: "Dessicete",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Desiccate'। এর অর্থ শুষ্ক করা বা শুকিয়ে ফেলা।</p><p>  • Dessicate: 's' অতিরিক্ত।</p><p>  • Desiccate: এটি সঠিক বানান।</p><p>  • Desicate: 'c' কম আছে।</p><p>  • Dessicete: 's' অতিরিক্ত এবং 'e' এর পরিবর্তে 'a' হবে।</p>",
+        },
+        {
+          id: 48,
+          question: "INOCCULATE",
+          options: {
+            a: "Innoculate",
+            b: "Inocculate",
+            c: "Inoculate",
+            d: "Innockulate",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Inoculate'। এর অর্থ প্রতিষেধক দেওয়া বা টিকা দেওয়া।</p><p>  • Innoculate: 'n' অতিরিক্ত।</p><p>  • Inocculate: 'c' অতিরিক্ত।</p><p>  • Inoculate: এটি সঠিক বানান।</p><p>  • Innockulate: 'n' এবং 'k' অতিরিক্ত।</p>",
+        },
+        {
+          id: 49,
+          question: "The correct spelling is-",
+          options: {
+            a: "Exemplery",
+            b: "Exemplary",
+            c: "Examplary",
+            d: "Eximplary",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Exemplary'। এর অর্থ অনুকরণীয় বা দৃষ্টান্তমূলক।</p><p>  • Exemplery: 'e' এর পরিবর্তে 'a' হবে।</p><p>  • Exemplary: এটি সঠিক বানান।</p><p>  • Examplary: 'a' এর পরিবর্তে 'e' হবে।</p><p>  • Eximplary: 'i' এর পরিবর্তে 'e' হবে।</p>",
+        },
+        {
+          id: 50,
+          question: "The correct spelling is-",
+          options: {
+            a: "Transatory",
+            b: "Transetory",
+            c: "Transitory",
+            d: "Transitary",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Transitory'। এর অর্থ ক্ষণস্থায়ী বা অস্থায়ী।</p><p>  • Transatory: 'a' এর পরিবর্তে 'i' হবে।</p><p>  • Transetory: 'e' এর পরিবর্তে 'i' হবে।</p><p>  • Transitory: এটি সঠিক বানান।</p><p>  • Transitary: 'a' এর পরিবর্তে 'o' হবে।</p>",
+        },
+        {
+          id: 51,
+          question: "Choose the correct spelling.",
+          options: {
+            a: "Irresistible",
+            b: "Irresistable",
+            c: "Iresistible",
+            d: "Iresistable",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Irresistible'। এর অর্থ অপ্রতিরোধ্য বা অনিবার্য।</p><p>  • Irresistible: এটি সঠিক বানান।</p><p>  • Irresistable: 'a' এর পরিবর্তে 'i' হবে।</p><p>  • Iresistible: প্রথম 'r' কম আছে।</p><p>  • Iresistable: প্রথম 'r' কম আছে এবং 'a' এর পরিবর্তে 'i' হবে।</p>",
+        },
+        {
+          id: 52,
+          question: "No spelling mistake occurs in-",
+          options: {
+            a: "Hedious",
+            b: "Hideous",
+            c: "Hidous",
+            d: "Hideus",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Hideous'। এর অর্থ ভয়ঙ্কর বা জঘন্য।</p><p>  • Hedious: 'e' এর পরিবর্তে 'i' হবে।</p><p>  • Hideous: এটি সঠিক বানান।</p><p>  • Hidous: 'e' কম আছে।</p><p>  • Hideus: 'o' কম আছে।</p>",
+        },
+        {
+          id: 53,
+          question: "Choose the correctly spelled word:",
+          options: {
+            a: "Payprous",
+            b: "Papyrus",
+            c: "Pappyras",
+            d: "Pepyras",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Papyrus'। এর অর্থ প্যাপিরাস, এক প্রকার প্রাচীন কাগজ তৈরির উদ্ভিদ।</p><p>  • Payprous: ভুল বানান।</p><p>  • Papyrus: এটি সঠিক বানান।</p><p>  • Pappyras: 'p' অতিরিক্ত এবং 'a' এর পরিবর্তে 'u' হবে।</p><p>  • Pepyras: ভুল বানান।</p>",
+        },
+        {
+          id: 54,
+          question: "Which word is incorrectly spelled?",
+          options: {
+            a: "Committee",
+            b: "Ocassion",
+            c: "Indecision",
+            d: "Exercise",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Ocassion'। এর সঠিক বানান হলো 'Occasion' যার অর্থ সুযোগ বা উপলক্ষ।</p><p>  • Committee: কমিটি বা সমিতি। এটি সঠিক বানান।</p><p>  • Ocassion: সঠিক বানান 'Occasion'। এখানে একটি 'c' কম আছে।</p><p>  • Indecision: সিদ্ধান্তহীনতা। এটি সঠিক বানান।</p><p>  • Exercise: অনুশীলন। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 55,
+          question: "Find out the incorrect one-",
+          options: {
+            a: "Secularism",
+            b: "Investigation",
+            c: "Renaissence",
+            d: "Patriarchal",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Renaissence'। এর সঠিক বানান হলো 'Renaissance' যার অর্থ নবজাগরণ।</p><p>  • Secularism: ধর্মনিরপেক্ষতাবাদ। এটি সঠিক বানান।</p><p>  • Investigation: তদন্ত। এটি সঠিক বানান।</p><p>  • Renaissence: সঠিক বানান 'Renaissance'। এখানে 'scence' এর পরিবর্তে 'ssance' হবে।</p><p>  • Patriarchal: পিতৃতান্ত্রিক। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 56,
+          question: "Find out the incorrect one-",
+          options: {
+            a: "Indeginous",
+            b: "correspondence",
+            c: "Colonialization",
+            d: "Industrialization",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Indeginous'। এর সঠিক বানান হলো 'Indigenous' যার অর্থ স্থানীয় বা আদিবাসী।</p><p>  • Indeginous: সঠিক বানান 'Indigenous'। এখানে 'e' এর পরিবর্তে 'i' হবে।</p><p>  • correspondence: চিঠিপত্র। এটি সঠিক বানান।</p><p>  • Colonialization: উপনিবেশায়ন। এটি সঠিক বানান (American English)।</p><p>  • Industrialization: শিল্পায়ন। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 57,
+          question: "The misspelled word is -",
+          options: {
+            a: "feeble",
+            b: "striking",
+            c: "magnificant",
+            d: "superb",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'magnificant'। এর সঠিক বানান হলো 'magnificent' যার অর্থ জাঁকজমকপূর্ণ বা মহৎ।</p><p>  • feeble: দুর্বল। এটি সঠিক বানান।</p><p>  • striking: আকর্ষণীয় বা লক্ষণীয়। এটি সঠিক বানান।</p><p>  • magnificant: সঠিক বানান 'magnificent'। এখানে 'i' এর পরিবর্তে 'e' হবে।</p><p>  • superb: চমৎকার। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 58,
+          question: "The misspelled word is-",
+          options: {
+            a: "authenticate",
+            b: "attest",
+            c: "illustrate",
+            d: "explicit",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'authenticate'। এর সঠিক বানান হলো 'authenticate' যার অর্থ প্রমাণীকরণ বা সত্যতা যাচাই করা। তবে এখানে অপশনগুলোর মধ্যে সবচেয়ে কাছাকাছি বা সম্ভবত প্রশ্নকর্তার ভুল বোঝানো হয়েছে কারণ 'authenticate' নিজেই সঠিক। যদি অন্য কোনো ভুল বানান না থাকে, তাহলে এই প্রশ্নটি একটু বিভ্রান্তিকর হতে পারে। এখানে 'authenticate' এর বানান সঠিক। অন্যান্য অপশনগুলো হল:</p><p>  • attest: প্রত্যয়ন করা বা সাক্ষ্য দেওয়া। এটি সঠিক বানান।</p><p>  • illustrate: চিত্রিত করা বা ব্যাখ্যা করা। এটি সঠিক বানান।</p><p>  • explicit: সুস্পষ্ট বা স্পষ্ট। এটি সঠিক বানান।</p><p>যদি প্রশ্নটি 'misspelled' এর পরিবর্তে 'correctly spelled' হতো, তাহলে 'authenticate' সঠিক হতো। কিন্তু 'misspelled' হওয়ায়, এখানে একটি সমস্যা আছে। সম্ভবত প্রশ্নটি অন্য কোনো শব্দ সম্পর্কে ছিল বা উত্তর ভুল দেওয়া হয়েছে। এই ধরনের ক্ষেত্রে যদি কোনো ত্রুটি না থাকে, তবে সঠিক উত্তর 'authenticate' হওয়াই যুক্তিসঙ্গত যদি এটি নিজেই ভুল বানানে লেখা হয়।</p>",
+        },
+        {
+          id: 59,
+          question: "The misspelled word is-",
+          options: {
+            a: "interpretation",
+            b: "jealous",
+            c: "miniature",
+            d: "paralel",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'paralel'। এর সঠিক বানান হলো 'parallel' যার অর্থ সমান্তরাল।</p><p>  • interpretation: ব্যাখ্যা। এটি সঠিক বানান।</p><p>  • jealous: ঈর্ষান্বিত। এটি সঠিক বানান।</p><p>  • miniature: ক্ষুদ্র সংস্করণ। এটি সঠিক বানান।</p><p>  • paralel: সঠিক বানান 'parallel'। এখানে একটি 'l' কম আছে।</p>",
+        },
+        {
+          id: 60,
+          question: "The misspelled word is -",
+          options: {
+            a: "lisence",
+            b: "previlege",
+            c: "persuade",
+            d: "losing",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'lisence'। এর সঠিক বানান হলো 'license' যার অর্থ অনুমতি বা লাইসেন্স।</p><p>  • lisence: সঠিক বানান 'license'। এখানে 's' এর পরিবর্তে 'c' হবে।</p><p>  • previlege: সঠিক বানান 'privilege' (সুবিধা)।</p><p>  • persuade: প্ররোচিত করা। এটি সঠিক বানান।</p><p>  • losing: হারানো। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 61,
+          question: "The misspelled word is-",
+          options: {
+            a: "official",
+            b: "repetition",
+            c: "judgment",
+            d: "separate",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'repetition'। এর সঠিক বানান হলো 'repetition' যার অর্থ পুনরাবৃত্তি। তবে, প্রদত্ত উত্তর 'b' অনুযায়ী এটি ভুল। 'repetition' একটি সঠিক বানান। সম্ভবত প্রশ্নটি একটি টাইপো। এখানে 'judgment' এর আমেরিকান বানানে 'e' থাকে না, ব্রিটিশ বানানে 'judgement' হয়। যদি প্রশ্নটি আমেরিকান বানান অনুযায়ী হয়ে থাকে, তাহলে 'judgment' সঠিক। কিন্তু 'repetition' নিঃসন্দেহে সঠিক বানান। যদি প্রশ্নটি 'misspelled' না হয়ে 'correctly spelled' হতো, তাহলে 'repetition' সঠিক হতো। এই প্রশ্নের উত্তরে বিভ্রান্তি আছে।</p><p>যদি প্রশ্নটি 'misspelled' খুঁজে বের করার জন্য হয়, তাহলে অন্য বিকল্পগুলো দেখুন:</p><p>  • official: সরকারি। এটি সঠিক বানান।</p><p>  • repetition: পুনরাবৃত্তি। এটি সঠিক বানান।</p><p>  • judgment: বিচার (আমেরিকান বানান)। ব্রিটিশ বানানে 'judgement'। উভয়ই ব্যবহৃত হয়।</p><p>  • separate: পৃথক। এটি সঠিক বানান।</p><p>যেহেতু 'repetition' একটি সঠিক বানান, এবং এটি 'misspelled' হিসাবে চিহ্নিত করা হয়েছে, তাই এটি একটি ভুল প্রশ্ন বা উত্তর।</p>",
+        },
+        {
+          id: 62,
+          question: "The misspelled word is-",
+          options: {
+            a: "probably",
+            b: "crusial",
+            c: "scisors",
+            d: "separate",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'scisors'। এর সঠিক বানান হলো 'scissors' যার অর্থ কাঁচি।</p><p>  • probably: সম্ভবত। এটি সঠিক বানান।</p><p>  • crusial: সঠিক বানান 'crucial' (গুরুত্বপূর্ণ)।</p><p>  • scisors: সঠিক বানান 'scissors'। এখানে একটি 's' কম আছে।</p><p>  • separate: পৃথক। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 63,
+          question: "The misspelled word is-",
+          options: {
+            a: "pundit",
+            b: "crusial",
+            c: "misnomer",
+            d: "circus",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'crusial'। এর সঠিক বানান হলো 'crucial' যার অর্থ গুরুত্বপূর্ণ বা সংবেদনশীল।</p><p>  • pundit: পণ্ডিত। এটি সঠিক বানান।</p><p>  • crusial: সঠিক বানান 'crucial'। এখানে 's' এর পরিবর্তে 'c' হবে।</p><p>  • misnomer: ভুল নাম। এটি সঠিক বানান।</p><p>  • circus: সার্কাস। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 64,
+          question: "Which of the following words has been properly spelled?",
+          options: {
+            a: "Occassionally",
+            b: "Ocassionally",
+            c: "Occasionally",
+            d: "Occasionaly",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Occasionally'। এর অর্থ মাঝে মাঝে বা সময়ে সময়ে।</p><p>  • Occassionally: 's' অতিরিক্ত।</p><p>  • Ocassionally: 'c' কম আছে এবং 's' অতিরিক্ত।</p><p>  • Occasionally: এটি সঠিক বানান।</p><p>  • Occasionaly: 'l' অতিরিক্ত।</p>",
+        },
+        {
+          id: 65,
+          question: "Find the correctly spelt word-",
+          options: {
+            a: "Argument",
+            b: "Weired",
+            c: "Repeatition",
+            d: "Misspell",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Argument'। এর অর্থ তর্ক বা যুক্তি। বিকল্প 'd' ও সঠিক বানান। এই ধরনের প্রশ্নে সাধারণত একটি সঠিক উত্তর থাকে। তবে, একাধিক সঠিক উত্তর থাকলে প্রথমটি গ্রহণ করা হয় বা নির্দেশিকা অনুযায়ী ব্যবস্থা নেওয়া হয়।</p><p>  • Argument: এটি সঠিক বানান।</p><p>  • Weired: সঠিক বানান 'Weird' (অদ্ভুত)।</p><p>  • Repeatition: সঠিক বানান 'Repetition' (পুনরাবৃত্তি)।</p><p>  • Misspell: এটিও সঠিক বানান (বানান ভুল করা)।</p>",
+        },
+        {
+          id: 66,
+          question: "Choose the correctly spelled word:",
+          options: {
+            a: "bizarre",
+            b: "decidous",
+            c: "cemetry",
+            d: "liasion",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'bizarre'। এর অর্থ অদ্ভুত বা বিচিত্র।</p><p>  • bizarre: এটি সঠিক বানান।</p><p>  • decidous: সঠিক বানান 'deciduous' (পর্ণমোচী)।</p><p>  • cemetry: সঠিক বানান 'cemetery' (কবরস্থান)।</p><p>  • liasion: সঠিক বানান 'liaison' (যোগাযোগ)।</p>",
+        },
+        {
+          id: 67,
+          question: "There is nothing _ on a hot sunny day.",
+          options: {
+            a: "as refreshed as a glass of cold water",
+            b: "more refreshing than",
+            c: "so refreshing that",
+            d: "refreshing enough",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'more refreshing than'। এই বাক্যে তুলনা করা হচ্ছে যে, গরমের দিনে ঠাণ্ডা জলের চেয়ে বেশি সতেজকারী আর কিছু নেই। 'more...than' কাঠামোটি তুলনার জন্য ব্যবহৃত হয়।</p><p>  • as refreshed as a glass of cold water: এটি 'as...as' কাঠামো ব্যবহার করে তুলনা করছে, কিন্তু 'refreshed' (বিশেষণ) এর পরিবর্তে 'refreshing' (ক্রিয়া বিশেষণ) বেশি উপযুক্ত।</p><p>  • more refreshing than: এটি সঠিক। 'more refreshing' তুলনামূলক ডিগ্রি এবং 'than' দিয়ে তুলনা করা হয়েছে।</p><p>  • so refreshing that: এই গঠনটি একটি ফলাফল বা মাত্রা বোঝাতে ব্যবহৃত হয়, যা এখানে প্রযোজ্য নয়।</p><p>  • refreshing enough: এটি '충분히 상쾌하다' (충분히 상쾌하다) বোঝায়, কিন্তু বাক্যের তুলনার সাথে সামঞ্জস্যপূর্ণ নয়।</p>",
+        },
+        {
+          id: 68,
+          question: "Choose the correct spelling from the following.",
+          options: {
+            a: "Assurance",
+            b: "Assurrance",
+            c: "Asurrance",
+            d: "Assurrence",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Assurance'। এর অর্থ আশ্বাস বা নিশ্চয়তা।</p><p>  • Assurance: এটি সঠিক বানান।</p><p>  • Assurrance: 'r' অতিরিক্ত।</p><p>  • Asurrance: 's' কম আছে এবং 'r' অতিরিক্ত।</p><p>  • Assurrence: 'e' এর পরিবর্তে 'a' হবে।</p>",
+        },
+        {
+          id: 69,
+          question: "It is the _ city of the country.",
+          options: {
+            a: "most populous",
+            b: "more populous",
+            c: "most people",
+            d: "most population",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'most populous'। বাক্যটি দেশের মধ্যে একটি শহরের জনবহুলতার সর্বোচ্চ মাত্রা বোঝায়। 'populous' অর্থ জনবহুল, এবং 'most' দিয়ে এর superlative degree বোঝানো হয়।</p><p>  • most populous: এটি সঠিক। 'most' superlative degree এবং 'populous' এর সাথে খাপ খায়।</p><p>  • more populous: এটি comparative degree (দুটি শহরের মধ্যে তুলনা)।</p><p>  • most people: এটি 'most' এবং 'people' (মানুষ), যা 'city' এর সাথে সরাসরি সম্পর্কিত নয়।</p><p>  • most population: 'population' একটি বিশেষ্য, কিন্তু এখানে একটি বিশেষণ প্রয়োজন 'city' কে বর্ণনা করার জন্য।</p>",
+        },
+        {
+          id: 70,
+          question: "Which of the following words is correctly spelt?",
+          options: {
+            a: "Madona",
+            b: "Malicious",
+            c: "Mistic",
+            d: "Mattress",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Mattress'। এর অর্থ তোশক বা গদি।</p><p>  • Madona: সঠিক বানান 'Madonna' (ম্যাডোনা)।</p><p>  • Malicious: সঠিক বানান 'Malicious' (হিংসাপরায়ণ)। যদিও এটি প্রায় সঠিক, তবে সঠিক বানানে 'i' এর পর 'o' থাকে না।</p><p>  • Mistic: সঠিক বানান 'Mystic' (রহস্যময়)।</p><p>  • Mattress: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 71,
+          question: "Which word is correctly spelt?",
+          options: {
+            a: "Accommodation",
+            b: "Recieve",
+            c: "Liabillity",
+            d: "Passionnate",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Accommodation'। এর অর্থ বাসস্থান বা থাকার ব্যবস্থা।</p><p>  • Accommodation: এটি সঠিক বানান।</p><p>  • Recieve: সঠিক বানান 'Receive' (গ্রহণ করা)।</p><p>  • Liabillity: সঠিক বানান 'Liability' (দায়)।</p><p>  • Passionnate: সঠিক বানান 'Passionate' (উৎসাহী)।</p>",
+        },
+        {
+          id: 72,
+          question: "The correct spelling is-",
+          options: {
+            a: "Conscientious",
+            b: "Concientious",
+            c: "Conscintous",
+            d: "Conscientous",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Conscientious'। এর অর্থ বিবেকবান বা কর্তব্যনিষ্ঠ।</p><p>  • Conscientious: এটি সঠিক বানান।</p><p>  • Concientious: 'ci' এর পরিবর্তে 'sci' হবে।</p><p>  • Conscintous: 'i' এর পরিবর্তে 'ien' হবে।</p><p>  • Conscientous: 'o' এর পরিবর্তে 'iou' হবে।</p>",
+        },
+        {
+          id: 73,
+          question: "A comedy is _ than an action movie.",
+          options: {
+            a: "more funny",
+            b: "funnier",
+            c: "most funny",
+            d: "funiest",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'funnier'। বাক্যটি একটি কমেডি এবং একটি অ্যাকশন মুভির মধ্যে তুলনামূলক বিনোদনের মাত্রা বোঝায়। 'funny' একটি ছোট বিশেষণ যার শেষে 'y' আছে, তাই এর তুলনামূলক ডিগ্রি তৈরি করতে 'y' কে 'i' তে পরিবর্তন করে 'er' যোগ করা হয়।</p><p>  • more funny: যদিও 'more' দিয়ে কিছু দীর্ঘ বিশেষণ এর তুলনামূলক ডিগ্রি গঠিত হয়, 'funny' এর জন্য 'funnier'ই সঠিক।</p><p>  • funnier: এটি সঠিক। 'funny' এর তুলনামূলক ডিগ্রি হলো 'funnier'।</p><p>  • most funny: এটি superlative degree, যা দুটি বস্তুর মধ্যে তুলনার জন্য প্রযোজ্য নয়।</p><p>  • funiest: এটি ভুল বানান এবং superlative degree এর জন্য ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 74,
+          question: "The correctly spelled word is-",
+          options: {
+            a: "Escalater",
+            b: "Etherial",
+            c: "Estuary",
+            d: "Exquisit",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Estuary'। এর অর্থ মোহনা বা নদীর মুখ।</p><p>  • Escalater: সঠিক বানান 'Escalator' (চলন্ত সিঁড়ি)।</p><p>  • Etherial: সঠিক বানান 'Ethereal' (স্বর্গীয়)।</p><p>  • Estuary: এটি সঠিক বানান।</p><p>  • Exquisit: সঠিক বানান 'Exquisite' (উৎকৃষ্ট)।</p>",
+        },
+        {
+          id: 75,
+          question: "Choose the correctly spelled word.",
+          options: {
+            a: "Courtius",
+            b: "Suspisious",
+            c: "Persuada",
+            d: "Descendant",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Descendant'। এর অর্থ বংশধর।</p><p>  • Courtius: সঠিক বানান 'Courteous' (বিনয়ী)।</p><p>  • Suspisious: সঠিক বানান 'Suspicious' (সন্দেহজনক)।</p><p>  • Persuada: সঠিক বানান 'Persuade' (প্ররোচিত করা)।</p><p>  • Descendant: এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 76,
+          question: "Nature finds ways to ensure the survival of _",
+          options: {
+            a: "the fittest",
+            b: "the fitters",
+            c: "the fitting",
+            d: "the fits",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক উত্তরটি হলো 'the fittest'। এটি 'survival of the fittest' (যোগ্যতমের টিকে থাকা) অভিব্যক্তিটির অংশ, যা প্রাকৃতিক নির্বাচন তত্ত্বের সাথে সম্পর্কিত। এটি বোঝায় যে প্রকৃতিতে যারা সবচেয়ে উপযুক্ত, তারাই টিকে থাকে। 'fittest' হলো 'fit' এর superlative degree।</p><p>  • the fittest: এটি সঠিক এবং একটি পরিচিত অভিব্যক্তি।</p><p>  • the fitters: 'fitter' তুলনামূলক ডিগ্রি, যা এখানে প্রযোজ্য নয়।</p><p>  • the fitting: 'fitting' একটি বর্তমান পার্টিসিপল বা বিশেষ্য, যা এখানে প্রযোজ্য নয়।</p><p>  • the fits: 'fits' এখানে একটি ক্রিয়াপদ বা বিশেষ্য, যা বাক্যের অর্থের সাথে মানানসই নয়।</p>",
+        },
+        {
+          id: 77,
+          question: "Which word is spelt correctly?",
+          options: {
+            a: "Concensus",
+            b: "Hiararchy",
+            c: "Medieval",
+            d: "Posession",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Medieval'। এর অর্থ মধ্যযুগীয়।</p><p>  • Concensus: সঠিক বানান 'Consensus' (ঐকমত্য)।</p><p>  • Hiararchy: সঠিক বানান 'Hierarchy' (শ্রেণিবিন্যাস)।</p><p>  • Medieval: এটি সঠিক বানান।</p><p>  • Posession: সঠিক বানান 'Possession' (দখল)।</p>",
+        },
+        {
+          id: 78,
+          question: "Choose the incorrectly spelled word.",
+          options: {
+            a: "Embellishment",
+            b: "Profesional",
+            c: "Entrepreneur",
+            d: "Especially",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Profesional'। এর সঠিক বানান হলো 'Professional' যার অর্থ পেশাদার।</p><p>  • Embellishment: অলঙ্করণ। এটি সঠিক বানান।</p><p>  • Profesional: সঠিক বানান 'Professional'। এখানে একটি 's' কম আছে।</p><p>  • Entrepreneur: উদ্যোক্তা। এটি সঠিক বানান।</p><p>  • Especially: বিশেষ করে। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 79,
+          question: "Choose the correct spelling:",
+          options: {
+            a: "Mongose",
+            b: "Monngose",
+            c: "Mongoose",
+            d: "Mongosse",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Mongoose'। এর অর্থ বেজি।</p><p>  • Mongose: একটি 'o' কম আছে।</p><p>  • Monngose: 'n' অতিরিক্ত।</p><p>  • Mongoose: এটি সঠিক বানান।</p><p>  • Mongosse: 's' অতিরিক্ত।</p>",
+        },
+        {
+          id: 80,
+          question: "Choose the incorrect spelling.",
+          options: {
+            a: "Accommodate",
+            b: "Admittence",
+            c: "Belligerent",
+            d: "Assimilation",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Admittence'। এর সঠিক বানান হলো 'Admittance' যার অর্থ প্রবেশাধিকার বা ভর্তি।</p><p>  • Accommodate: থাকার ব্যবস্থা করা। এটি সঠিক বানান।</p><p>  • Admittence: সঠিক বানান 'Admittance'। এখানে 'e' এর পরিবর্তে 'a' হবে।</p><p>  • Belligerent: যুদ্ধপ্রিয়। এটি সঠিক বানান।</p><p>  • Assimilation: আত্তীকরণ। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 81,
+          question: "Choose the incorrect spelling.",
+          options: {
+            a: "Conscientious",
+            b: "Preseverence",
+            c: "Committee",
+            d: "Connoisseur",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Preseverence'। এর সঠিক বানান হলো 'Perseverance' যার অর্থ অধ্যবসায় বা দৃঢ়তা।</p><p>  • Conscientious: বিবেকবান। এটি সঠিক বানান।</p><p>  • Preseverence: সঠিক বানান 'Perseverance'। এখানে 'e' এর পরিবর্তে 'a' হবে।</p><p>  • Committee: কমিটি। এটি সঠিক বানান।</p><p>  • Connoisseur: রসজ্ঞ ব্যক্তি বা বিশেষজ্ঞ। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 82,
+          question: "Choose the correctly spelled word:",
+          options: {
+            a: "renaissance",
+            b: "renaisance",
+            c: "reneissance",
+            d: "reneisance",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'renaissance'। এর অর্থ নবজাগরণ।</p><p>  • renaissance: এটি সঠিক বানান।</p><p>  • renaisance: 's' কম আছে।</p><p>  • reneissance: 'e' অতিরিক্ত।</p><p>  • reneisance: 'e' অতিরিক্ত এবং 's' কম আছে।</p>",
+        },
+        {
+          id: 83,
+          question: "Choose the correctly spelled word:",
+          options: {
+            a: "rendezvous",
+            b: "rondervoux",
+            c: "rondervous",
+            d: "rindezvous",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'rendezvous'। এর অর্থ গোপন সাক্ষাৎ বা নির্ধারিত মিলনস্থল।</p><p>  • rendezvous: এটি সঠিক বানান।</p><p>  • rondervoux: ভুল বানান।</p><p>  • rondervous: ভুল বানান।</p><p>  • rindezvous: ভুল বানান।</p>",
+        },
+        {
+          id: 84,
+          question: "Choose the correct spelling -",
+          options: {
+            a: "Milenium",
+            b: "Millenium",
+            c: "Millennium",
+            d: "Milennium",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Millennium'। এর অর্থ সহস্রাব্দ বা ১০০০ বছর।</p><p>  • Milenium: 'l' এবং 'n' কম আছে।</p><p>  • Millenium: 'n' কম আছে।</p><p>  • Millennium: এটি সঠিক বানান।</p><p>  • Milennium: 'l' কম আছে।</p>",
+        },
+        {
+          id: 85,
+          question: "Choose the correct spelling -",
+          options: {
+            a: "Encyclopadia",
+            b: "Encyclopidia",
+            c: "Encyclopaedia",
+            d: "Encyclopedia",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Encyclopaedia'। এর অর্থ বিশ্বকোষ। (ব্রিটিশ বানান)</p><p>  • Encyclopadia: 'a' অতিরিক্ত।</p><p>  • Encyclopidia: 'i' এর পরিবর্তে 'ae' বা 'e' হবে।</p><p>  • Encyclopaedia: এটি সঠিক বানান (ব্রিটিশ ইংরেজি)।</p><p>  • Encyclopedia: এটিও সঠিক বানান (আমেরিকান ইংরেজি)। যেহেতু বিকল্প (c) ও সঠিক, এবং প্রশ্ন একটি সঠিক উত্তর চেয়েছে, তাই (c) একটি সম্ভাব্য উত্তর।</p>",
+        },
+        {
+          id: 86,
+          question: "Find out the mis-spelled word:",
+          options: {
+            a: "suggestive",
+            b: "symbolic",
+            c: "symetery",
+            d: "scintillating",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'symetery'। এর সঠিক বানান হলো 'cemetery' যার অর্থ কবরস্থান।</p><p>  • suggestive: ইঙ্গিতপূর্ণ। এটি সঠিক বানান।</p><p>  • symbolic: প্রতীকী। এটি সঠিক বানান।</p><p>  • symetery: সঠিক বানান 'cemetery'। এখানে 'e' এর পরিবর্তে 'a' হবে এবং 's' এর পরিবর্তে 'c' হবে।</p><p>  • scintillating: ঝলমলে বা উজ্জ্বল। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 87,
+          question: "Choose the correct spelling.",
+          options: {
+            a: "Sovereignty",
+            b: "Sovergnty",
+            c: "Sovereignty",
+            d: "Sovernty",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Sovereignty'। এর অর্থ সার্বভৌমত্ব।</p><p>  • Sovereignty: এটি সঠিক বানান।</p><p>  • Sovergnty: ভুল বানান।</p><p>  • Sovereignty: এটি সঠিক বানান।</p><p>  • Sovernty: ভুল বানান।</p>",
+        },
+        {
+          id: 88,
+          question: "Choose the correct spelling:",
+          options: {
+            a: "Entreprenor",
+            b: "Entrepreneor",
+            c: "Entrepreneur",
+            d: "Enterpreneur",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Entrepreneur'। এর অর্থ উদ্যোক্তা।</p><p>  • Entreprenor: 'e' কম আছে।</p><p>  • Entrepreneor: 'e' অতিরিক্ত।</p><p>  • Entrepreneur: এটি সঠিক বানান।</p><p>  • Enterpreneur: 'e' এর পরিবর্তে 'o' হবে।</p>",
+        },
+        {
+          id: 89,
+          question: "Which one of the following is the correct spelling?",
+          options: {
+            a: "Abborigines",
+            b: "Aboriginnes",
+            c: "Aborigines",
+            d: "Aboregence",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Aborigines'। এর অর্থ আদিবাসী বা আদিম অধিবাসী।</p><p>  • Abborigines: 'b' অতিরিক্ত।</p><p>  • Aboriginnes: 'n' অতিরিক্ত।</p><p>  • Aborigines: এটি সঠিক বানান।</p><p>  • Aboregence: ভুল বানান।</p>",
+        },
+        {
+          id: 90,
+          question: "Find the incorrectly spelled word-",
+          options: {
+            a: "Seperate",
+            b: "Receive",
+            c: "Committee",
+            d: "Psychology",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে ভুল বানানটি হলো 'Seperate'। এর সঠিক বানান হলো 'Separate' যার অর্থ পৃথক করা।</p><p>  • Seperate: সঠিক বানান 'Separate'। এখানে 'e' এর পরিবর্তে 'a' হবে।</p><p>  • Receive: গ্রহণ করা। এটি সঠিক বানান।</p><p>  • Committee: কমিটি। এটি সঠিক বানান।</p><p>  • Psychology: মনোবিজ্ঞান। এটি সঠিক বানান।</p>",
+        },
+        {
+          id: 91,
+          question: "Choose the correct spelling?",
+          options: {
+            a: "Leutenant",
+            b: "Leftenant",
+            c: "Lieutenant",
+            d: "Leiutenant",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Lieutenant'। এর অর্থ লেফটেন্যান্ট, সামরিক বাহিনীর একটি পদ।</p><p>  • Leutenant: 'eu' এর পরিবর্তে 'ieu' হবে।</p><p>  • Leftenant: এটি ভুল বানান।</p><p>  • Lieutenant: এটি সঠিক বানান।</p><p>  • Leiutenant: 'ei' এর পরিবর্তে 'ie' হবে।</p>",
+        },
+        {
+          id: 92,
+          question: "Choose the correct spelling?",
+          options: {
+            a: "Seperate",
+            b: "Separate",
+            c: "Saperate",
+            d: "Saparete",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Separate'। এর অর্থ পৃথক করা বা আলাদা করা।</p><p>  • Seperate: 'e' এর পরিবর্তে 'a' হবে।</p><p>  • Separate: এটি সঠিক বানান।</p><p>  • Saperate: 'a' এর পরিবর্তে 'e' হবে।</p><p>  • Saparete: ভুল বানান।</p>",
+        },
+        {
+          id: 93,
+          question: "লেফটেন্যান্ট জেনারেল শব্দের সঠিক ইংরেজি বানান ?",
+          options: {
+            a: "Leafitenant",
+            b: "Leiftenant",
+            c: "Lieutenant",
+            d: "Lieaftenant",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Lieutenant'। এর অর্থ সামরিক বাহিনীর একটি পদ, লেফটেন্যান্ট।</p><p>  • Leafitenant: ভুল বানান।</p><p>  • Leiftenant: ভুল বানান।</p><p>  • Lieutenant: এটি সঠিক বানান।</p><p>  • Lieaftenant: ভুল বানান।</p>",
+        },
+        {
+          id: 94,
+          question: "Which one is the correct spelling?",
+          options: {
+            a: "Excesive",
+            b: "Axcessive",
+            c: "Excessive",
+            d: "Exccessive",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে সঠিক বানানটি হলো 'Excessive'। এর অর্থ অতিরিক্ত বা অত্যধিক।</p><p>  • Excesive: 's' কম আছে।</p><p>  • Axcessive: 'x' এর পরিবর্তে 'c' হবে।</p><p>  • Excessive: এটি সঠিক বানান।</p><p>  • Exccessive: 'c' অতিরিক্ত।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
